@@ -24,8 +24,8 @@ export const botConfig = {
     activities: [
       {
         name: "Learning new spells", // required by Discord API, not shown in the client
-        state: "stalking",     // this is what people actually see
-        type: 0,               // Custom
+        state: "Learning new spells",     // this is what people actually see
+        type: 0,               // Dating simulator
       },
     ],
   },
