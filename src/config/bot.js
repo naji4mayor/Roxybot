@@ -23,8 +23,8 @@ export const botConfig = {
     // 5 = Competing
     activities: [
       {
-        name: "Learning new spells", // required by Discord API, not shown in the client
-        state: "Dating Simulator 2",     // this is what people actually see
+        name: "Dating Simulator 2", // required by Discord API, not shown in the client
+        state: "",     // this is what people actually see
         type: 0,               // Dating simulator
       },
     ],
