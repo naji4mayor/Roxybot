@@ -13,11 +13,14 @@ export const DEFAULT_ECONOMY_DATA = {
     lastMine: 0,
     lastGamble: 0,
     lastFish: 0,
+    lastSpin: 0,
     dailyStreak: 0,
     lastWeekly: 0,
     lastDeposit: 0,
     lastWithdraw: 0,
     inventory: {},
+    pendingSpins: [],
+    spinHistory: [],
     upgrades: {},
     cooldowns: {}
 };
