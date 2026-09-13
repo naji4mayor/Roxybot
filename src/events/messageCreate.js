@@ -21,6 +21,149 @@ import {
 
 const MESSAGE_XP_RATE_LIMIT_ATTEMPTS = 12;
 const MESSAGE_XP_RATE_LIMIT_WINDOW_MS = 10000;
+const MENTION_REPLY_COOLDOWN_MS = 5000;
+const mentionReplyCooldowns = new Map();
+
+export const TSUNDERE_REPLIES = {
+  funny: [
+    'You summoned me for *that*? Hmph. Fine, that was actually funny.',
+    'I was busy being mysterious, but I suppose I can laugh at that.',
+    'That joke was terrible. I laughed anyway. Do not get smug about it.',
+    'I would rate that joke a 7 out of 10. The missing 3 points are for your confidence.',
+    'Stop making me laugh. I have a reputation to maintain.',
+    'Was that supposed to be funny? ...Because it was. A little.',
+    'I am not laughing. This is merely an aggressive smile.',
+    'That was so bad it looped around and became impressive.',
+    'You have been promoted from mildly annoying to entertaining.',
+    'Hmph. Fine, you get one comedy point. Spend it wisely.',
+    'I have heard better jokes from a sleepy toaster, but yours had spirit.',
+    'Do not celebrate. I only laughed because the silence was getting awkward.',
+    'You are lucky you are cute when your jokes need help.',
+  ],
+  flirty: [
+    'W-why are you looking at me like that? It is not like I was waiting for you to say something.',
+    'You are kind of charming when you are this bold. Do not make me repeat that.',
+    'I suppose I can spare you a reply. Try not to fall for me while I do.',
+    'You are staring again. Not that I noticed. I noticed a normal amount.',
+    'If you wanted my attention, you could have just asked. Show-off.',
+    'You are dangerously adorable today. Try to be careful about that.',
+    'I am only replying because your message was... acceptable. And maybe cute.',
+    'Do not use that tone with me unless you are prepared for me to remember it.',
+    'You make it difficult to act unimpressed. This is becoming inconvenient.',
+    'I am not blushing. The lighting is simply being dramatic.',
+    'You have a lot of confidence for someone asking me to notice them.',
+    'Fine, you have my attention. For now. Do not make it weird.',
+    'I was going to tease you, but then you said something sweet. Rude.',
+  ],
+  greeting: [
+    'Oh, it is you. I was absolutely not hoping you would show up.',
+    'Hmph. Hello. You took long enough to say hi.',
+    'Welcome back. Do not misunderstand, I noticed you were gone.',
+    'Oh, hello there. Try not to look so pleased that I answered.',
+    'Good morning. I expect you to be less chaotic than yesterday. No promises?',
+    'Good evening. The world survived without you, somehow.',
+    'Hey. I was not waiting by the door. There is not even a door here.',
+    'You came back. I suppose that is acceptable.',
+    'Hi. There, I said it. Do not make a big deal out of it.',
+    'Look who finally decided to appear. How terribly predictable.',
+    'Hello, favorite interruption. What do you want?',
+    'Welcome, troublemaker. Behave yourself. Or do not, I guess.',
+  ],
+  help: [
+    'You need help? Fine, ask properly and I might save you from yourself.',
+    'I can help. Probably. Maybe. Stop staring and tell me what you need.',
+    'Of course I can help. I am amazing like that. Try to keep up.',
+    'You actually asked instead of pressing random buttons? I am impressed.',
+    'Tell me the problem from the beginning. And try to leave out the dramatic reenactment.',
+    'I will help you, but only because watching you struggle would be embarrassing for both of us.',
+    'Give me the details. No, more details than that. I am not a mind reader.',
+    'Fine, hand me the problem. I will untangle it while you pretend you had a plan.',
+    'I have an idea. It is a good one, obviously. Listen closely.',
+    'You are not helpless. You are just temporarily under-informed. Probably.',
+    'Ask your question clearly and I might reward you with an actual answer.',
+    'I am on the case. Try not to create three new problems while I solve this one.',
+    'Help is available, apparently. Lucky for you, I am here.',
+  ],
+  sad: [
+    'Hey... come here. I mean, metaphorically. You do not have to handle everything alone.',
+    'I am sorry you are feeling like this. I will stay with you for a while, okay?',
+    'You do not have to pretend you are fine around me. Hmph... just tell me what happened.',
+    'That sounds really heavy. Take a breath, and tell me one small thing I can help with.',
+    'I may tease you, but I am not going to leave you alone with a bad day.',
+    'You are allowed to be sad. Just do not disappear on me, understood?',
+    'I wish I could make it hurt less. For now, I can listen. So talk to me.',
+    'No fixing everything at once. One breath, one thought, one tiny step.',
+    'You matter, even when your brain is being unfair to you.',
+    'I am here. I am not saying that because I care or anything... obviously I care a little.',
+  ],
+  annoyed: [
+    'Someone annoyed you? Point them out. I have several strongly worded opinions ready.',
+    'Take a breath before you say something that becomes tomorrow\'s problem.',
+    'You are allowed to be annoyed. Just do not let that person rent space in your head for free.',
+    'Hmph. That sounds irritating. Tell me what happened and I will judge it fairly. Probably.',
+    'Put the angry message down and step away from the send button. Trust me.',
+    'Your frustration has been noted. Your dramatic sigh was also noted.',
+    'That would annoy me too. We can complain about it for exactly five minutes.',
+    'Do you want advice, a distraction, or permission to grumble? Choose carefully.',
+    'I can tell you are annoyed from here. Come on, let it out.',
+    'Do not start a war over something a snack and a nap could solve.',
+  ],
+  default: [
+    'You called? Make it quick... unless you wanted to talk to me.',
+    'I heard you. Do not look so surprised; I pay attention sometimes.',
+    'That is an interesting thought. I might even agree with you. Eventually.',
+    'Hmph. I am listening, so you had better make this worth my time.',
+    'You have my attention. Do not waste it on something boring.',
+    'Interesting. I will pretend I was not curious about what you meant.',
+    'You say that like I am supposed to be impressed. ...It worked a little.',
+    'I heard you the first time. I just wanted to make you wait.',
+    'That is certainly one way to think about it. Not the best way, but one way.',
+    'You are very confident for someone who just summoned me with a mention.',
+    'I have opinions about that, but you have not earned all of them yet.',
+    'Keep talking. I am not interested or anything. This is just convenient timing.',
+    'You are lucky I am in a good mood. Do not test how long that lasts.',
+    'I could ignore you, but then who would keep you out of trouble?',
+    'That was almost a smart thing to say. I am proud. Quietly.',
+    'I am listening. Yes, really. Stop looking so surprised.',
+    'You wanted a response, and now you have one. Try not to get attached.',
+  ],
+};
+
+export const TSUNDERE_GIFS = {
+  funny: [
+    'https://media.tenor.com/98Yo0DjDpnAAAAAM/mushoku-tensei-roxy.gif',
+    'https://i.pinimg.com/originals/17/3b/2c/173b2c415a3d34ecb8de0cdc5c9af6f2.gif',
+  ],
+  flirty: [
+    'https://i.pinimg.com/originals/d3/ce/5a/d3ce5a0e2b46ae131ea2acf99fbde871.gif',
+    'https://media.tenor.com/li-JsiKXmFkAAAAM/%E7%84%A1%E8%81%B7%E8%BD%89%E7%94%9F-mushoku-tensei.gif',
+    'https://media1.tenor.com/m/cDaRB6tK1AgAAAAC/roxy-roxy-migurdia.gif',
+    'https://media1.tenor.com/m/yg83EZtFemcAAAAd/roxy-migurdia-migurdia.gif',
+  ],
+  greeting: [
+    'https://i.pinimg.com/originals/ca/b4/59/cab45983d963c43d7d7658e777cc6148.gif',
+    'https://i.pinimg.com/originals/c2/d4/8f/c2d48fd019b4f2e709bdf77bf0fb48f1.gif',
+  ],
+  help: [
+    'https://64.media.tumblr.com/49cd73ac56062ce56cefd9744a2350cb/4fd9f6bee54359f3-62/s500x750/15edba03da74be72b12f534630183c7ba89db1ff.gif',
+    'https://media1.tenor.com/m/Y1FTZ3axcs4AAAAd/roxy-migurdia-greyrat-mushoku-tensei-season-3.gif',
+  ],
+  sad: [
+    'https://i.imgur.com/UkHfwYp.gif',
+    'https://media1.tenor.com/m/Y1FTZ3axcs4AAAAd/roxy-migurdia-greyrat-mushoku-tensei-season-3.gif',
+    'https://media1.tenor.com/m/xsGeKgKv7McAAAAC/roxy-migurdia-roxy.gif',
+    'https://media1.tenor.com/m/xjlR0QvgTDgAAAAC/roxy-migurdia-rudeus-greyrat.gif',
+  ],
+  annoyed: [
+    'https://media1.tenor.com/m/opNarol2l_4AAAAd/roxy.gif',
+    'https://media1.tenor.com/m/b7Y2mhaX6F8AAAAd/cringe-uneasy.gif',
+    'https://64.media.tumblr.com/4a47228f8031694b484287aa83e6f003/f04ce3c786f98800-e4/s540x810/a4054a02b1594a5c7c559c3a4df91016c65091d1.gifv',
+  ],
+  default: [
+    'https://media.giphy.com/media/3o7aD2saalBwwftBIY/giphy.gif',
+    'https://media.giphy.com/media/3o6Zt6D8QmQzQ0VQ5W/giphy.gif',
+  ],
+};
 
 export default {
   name: Events.MessageCreate,
@@ -35,6 +178,11 @@ export default {
         return;
       }
 
+      const mentionProcessed = await handleMentionResponder(message, client);
+      if (mentionProcessed) {
+        return;
+      }
+
       await handlePrefixCommand(message, client);
 
       await handleLeveling(message, client);
@@ -43,6 +191,59 @@ export default {
     }
   }
 };
+
+async function handleMentionResponder(message, client) {
+  if (!client.user || !message.mentions.has(client.user.id)) {
+    return false;
+  }
+
+  const prompt = message.content
+    .replace(new RegExp(`<@!?${client.user.id}>`, 'g'), '')
+    .trim();
+
+  if (!prompt) {
+    await message.reply({
+      content: 'You called? Use words, silly. I cannot read minds... usually.',
+      allowedMentions: { repliedUser: false },
+    }).catch(() => {});
+    return true;
+  }
+
+  const now = Date.now();
+  const lastReply = mentionReplyCooldowns.get(message.author.id) || 0;
+  if (now - lastReply < MENTION_REPLY_COOLDOWN_MS) {
+    return true;
+  }
+  mentionReplyCooldowns.set(message.author.id, now);
+
+  const normalizedPrompt = prompt.toLowerCase();
+  const category = normalizedPrompt.match(/\b(sad|upset|depressed|crying|cry|lonely|hurt|heartbroken|bad day)\b/)
+    ? 'sad'
+    : normalizedPrompt.match(/\b(annoyed|angry|mad|irritated|frustrated|hate|ugh| stupid)\b/)
+      ? 'annoyed'
+      : normalizedPrompt.match(/\b(lol|lmao|haha|joke|funny|laugh)\b/)
+    ? 'funny'
+    : normalizedPrompt.match(/\b(cute|pretty|handsome|beautiful|love|miss you|date|flirt)\b/)
+      ? 'flirty'
+      : normalizedPrompt.match(/\b(hello|hi|hey|yo|sup|good morning|good night)\b/)
+        ? 'greeting'
+        : normalizedPrompt.match(/\b(help|how do|what do|can you|please)\b/)
+          ? 'help'
+            : 'default';
+  const replies = TSUNDERE_REPLIES[category];
+  const reply = replies[Math.floor(Math.random() * replies.length)];
+  const gifs = TSUNDERE_GIFS[category] || TSUNDERE_GIFS.default;
+  const gif = gifs[Math.floor(Math.random() * gifs.length)];
+
+  await message.reply({
+    content: reply,
+    embeds: [{ image: { url: gif } }],
+    allowedMentions: { repliedUser: false },
+  }).catch(error => {
+    logger.warn('Mention responder could not reply:', error);
+  });
+  return true;
+}
 
 async function handlePrefixCommand(message, client) {
   try {
