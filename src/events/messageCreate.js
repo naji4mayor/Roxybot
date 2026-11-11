@@ -8,6 +8,7 @@ import { supportsPrefixExecution, executePrefixCommand, resolvePrefixAccessKey }
 import { resolveCommandAlias, resolveSubcommandAlias } from '../config/commands/commandAliases.js';
 import { getPrefixRestriction } from '../config/commands/prefixRestrictions.js';
 import { getGuildConfig } from '../services/config/guildConfig.js';
+import { generateMentionReply } from '../services/mentionResponderService.js';
 import { getCommandPrefix, getBotMessage, isBotOwner, isCommandCategoryEnabled, isMaintenanceMode } from '../config/bot.js';
 import { enforceAbuseProtection, formatCooldownDuration } from '../utils/abuseProtection.js';
 import { createEmbed } from '../utils/embeds.js';
@@ -827,7 +828,19 @@ async function handleMentionResponder(message, client) {
   const maturePrompt = /\b(flirt|flirty|tease|teasing|spicy|kiss|date me|attracted|hot|seduce|come closer)\b/.test(normalizedPrompt);
 
   if (matureModeEnabled && matureChannel && maturePrompt) {
-    const reply = MATURE_TSUNDERE_REPLIES[Math.floor(Math.random() * MATURE_TSUNDERE_REPLIES.length)];
+    let reply;
+    try {
+      reply = await generateMentionReply({
+        guildId: message.guild.id,
+        userId: message.author.id,
+        displayName: message.member?.displayName || message.author.username,
+        prompt,
+        matureMode: true,
+      });
+    } catch (error) {
+      logger.warn('AI mention responder failed; using local fallback:', error.message);
+    }
+    reply ||= MATURE_TSUNDERE_REPLIES[Math.floor(Math.random() * MATURE_TSUNDERE_REPLIES.length)];
     await message.reply({
       content: reply,
       allowedMentions: { repliedUser: false },
@@ -897,7 +910,19 @@ async function handleMentionResponder(message, client) {
           ? 'help'
             : 'default';
   const replies = FRIENDLY_RESPONSES[category] || FRIENDLY_RESPONSES.default;
-  let reply = replies[Math.floor(Math.random() * replies.length)];
+  let reply;
+  try {
+    reply = await generateMentionReply({
+      guildId: message.guild.id,
+      userId: message.author.id,
+      displayName: message.member?.displayName || message.author.username,
+      prompt,
+      matureMode: false,
+    });
+  } catch (error) {
+    logger.warn('AI mention responder failed; using local fallback:', error.message);
+  }
+  reply ||= replies[Math.floor(Math.random() * replies.length)];
   const conversation = mentionReplyCooldowns.get(`conversation:${message.author.id}`) || { count: 0, lastCategory: null };
   conversation.count += 1;
   conversation.lastCategory = category;
